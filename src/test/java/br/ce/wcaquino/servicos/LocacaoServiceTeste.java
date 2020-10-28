@@ -18,6 +18,7 @@ import org.junit.rules.ExpectedException;
 import br.ce.wcaquino.entidades.Filme;
 import br.ce.wcaquino.entidades.Locacao;
 import br.ce.wcaquino.entidades.Usuario;
+import br.ce.wcaquino.exceptions.FilmeSemEstoqueException;
 import br.ce.wcaquino.utils.DataUtils;
 
 public class LocacaoServiceTeste {
@@ -109,6 +110,25 @@ public class LocacaoServiceTeste {
 				
 		//Ação
 		service.alugarFilme(usuario, filme);
+	}
+	
+//	Vamos dar preferência para o primeiro método. Contudo, precisamos melhorá-lo! Exception é muito genérico. Como garantir
+//	que essa Exception foi lançada pelo motivo correto? Através da mensagem que a Exception está enviando!!! Vamos refazer:
+	
+	@Test(expected = FilmeSemEstoqueException.class)
+	public void testLocacao_filmeSemEstoque1v2() throws Exception {
+		//Cenário
+		LocacaoService service = new LocacaoService();
+		Usuario usuario = new Usuario();
+		Filme filme = new Filme("A Bela e a Fera", 0, 4.0);
+		
+		 //Ação
+		service.alugarFilme(usuario, filme);
+	}
+	
+	@Test
+	public void testLocacao_usuarioVazio() {
+		
 	}
 	
 }
