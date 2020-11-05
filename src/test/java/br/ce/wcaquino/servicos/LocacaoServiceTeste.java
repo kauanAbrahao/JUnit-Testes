@@ -22,18 +22,22 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ErrorCollector;
 import org.junit.rules.ExpectedException;
+import org.mockito.Mockito;
 
+import br.ce.wcaquino.dao.LocacaoDAO;
+import br.ce.wcaquino.dao.SerasaService;
 import br.ce.wcaquino.entidades.Filme;
 import br.ce.wcaquino.entidades.Locacao;
 import br.ce.wcaquino.entidades.Usuario;
 import br.ce.wcaquino.exceptions.FilmeSemEstoqueException;
 import br.ce.wcaquino.exceptions.LocadoraException;
+import br.ce.wcaquino.exceptions.UsuarioNegativadoException;
 import br.ce.wcaquino.utils.DataUtils;
 
 public class LocacaoServiceTeste {
 
 	private LocacaoService service;
-	static int c = 1;
+	private SerasaService serasa;
 	
 	@Rule
 	public ErrorCollector error = new ErrorCollector();	
@@ -46,15 +50,15 @@ public class LocacaoServiceTeste {
 	@Before
 	public void setup() {
 		service = new LocacaoService();
-		System.out.println("Teste " + c + " iniciado!");
-		
-	}
+		LocacaoDAO dao = Mockito.mock(LocacaoDAO.class);
+		service.setLocacaoDAO(dao);
+		serasa = Mockito.mock(SerasaService.class);
+		service.setSerasaService(serasa);
+	}	
 	
 //	Após cada método ser finalizado, roda essas linhas de código.
 	@After
 	public void tearDown() {
-		System.out.println("Teste " + c + " finalizado!");
-		c++;
 	}
 	
 //	Antes da CLASSE ser iniciada, rodam essas linhas
@@ -125,7 +129,7 @@ public class LocacaoServiceTeste {
 //	Outra forma de tratar a Exception:
 	
 	@Test
-	public void testaLocacao_filmeSemEstoque2() throws LocadoraException {
+	public void testaLocacao_filmeSemEstoque2() throws LocadoraException, UsuarioNegativadoException {
 		//Contexto(cenário)
 		Usuario usuario = new Usuario("Jorge");
 		List<Filme> filmes = Arrays.asList(new Filme("Toy Story 2", 0, 5.0)); //Se você colocar 0, vai cair no asserThat, porque gerou uma Exception.
@@ -142,7 +146,7 @@ public class LocacaoServiceTeste {
 	
 //	Uma terceira forma de verificar, é através de @Rule ~ ExpectedException. ATENÇÃO!! Precisa vir antes de executar a açao.
 	@Test
-	public void testaLocacao_filmeSemEstoque3() throws FilmeSemEstoqueException, LocadoraException {
+	public void testaLocacao_filmeSemEstoque3() throws FilmeSemEstoqueException, LocadoraException, UsuarioNegativadoException {
 		//Contexto(cenário)
 		Usuario usuario = new Usuario("Jorge");
 		List<Filme> filmes = Arrays.asList(new Filme("Toy Story 2", 0, 5.0)); //Se colocar um valor diferente de 0, o teste vai falhar, pois ele espera uma Exception
@@ -170,7 +174,7 @@ public class LocacaoServiceTeste {
 	
 	//Fizemos novamente a segunda forma. Ela é a mais robusta e permite maior controle. Na dúvida, use essa forma!!
 	@Test
-	public void testLocacao_usuarioVazio() throws FilmeSemEstoqueException {
+	public void testLocacao_usuarioVazio() throws FilmeSemEstoqueException, UsuarioNegativadoException {
 		//cenário
 		List<Filme> filmes = Arrays.asList(new Filme("Toy Story 2", 5, 5.0));
 		
@@ -187,7 +191,7 @@ public class LocacaoServiceTeste {
 	
 //	E finalmente, novamente a terceira forma.
 	@Test
-	public void testLocacao_filmeVazio() throws FilmeSemEstoqueException, LocadoraException {
+	public void testLocacao_filmeVazio() throws FilmeSemEstoqueException, LocadoraException, UsuarioNegativadoException {
 		//cenário
 		Usuario usuario = new Usuario("Matheus");
 		
@@ -200,7 +204,7 @@ public class LocacaoServiceTeste {
 	}
 	
 	@Test
-	public void testLocacao_Descontos() throws FilmeSemEstoqueException, LocadoraException {
+	public void testLocacao_Descontos() throws FilmeSemEstoqueException, LocadoraException, UsuarioNegativadoException {
 //		cenário
 		Usuario usuario = new Usuario("Renan");
 		List<Filme> filmes = new ArrayList<Filme>();
@@ -226,7 +230,7 @@ public class LocacaoServiceTeste {
 	
 		
 	@Test
-	public void testLocacao_NaoDeveDevolverFilmeNoDomingo() throws FilmeSemEstoqueException, LocadoraException {
+	public void testLocacao_NaoDeveDevolverFilmeNoDomingo() throws FilmeSemEstoqueException, LocadoraException, UsuarioNegativadoException {
 		Assume.assumeTrue(DataUtils.verificarDiaSemana(new Date(), Calendar.SATURDAY));
 		
 //		cenário
@@ -241,6 +245,19 @@ public class LocacaoServiceTeste {
 		
 		boolean segunda = DataUtils.verificarDiaSemana(locacao.getDataRetorno(), Calendar.MONDAY);
 		assertTrue(segunda);	
+	}
+	
+	@Test(expected = UsuarioNegativadoException.class)
+	public void LocacaoService_UsuarioNegativadoNoSerasa() throws FilmeSemEstoqueException, LocadoraException, UsuarioNegativadoException {
+//		cenário
+		Usuario usuario = new Usuario("Usuario1");
+		List<Filme>filmes = Arrays.asList(new Filme("Filme x", 4, 4.0));
+		Mockito.when(serasa.possuiNegativacao(usuario)).thenReturn(true);
+		
+//		ação
+		service.alugarFilme(usuario, filmes);
+		
+		
 	}
 	
 }

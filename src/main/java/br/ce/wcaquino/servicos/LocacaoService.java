@@ -6,19 +6,29 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import br.ce.wcaquino.dao.LocacaoDAO;
+import br.ce.wcaquino.dao.SerasaService;
 import br.ce.wcaquino.entidades.Filme;
 import br.ce.wcaquino.entidades.Locacao;
 import br.ce.wcaquino.entidades.Usuario;
 import br.ce.wcaquino.exceptions.FilmeSemEstoqueException;
 import br.ce.wcaquino.exceptions.LocadoraException;
+import br.ce.wcaquino.exceptions.UsuarioNegativadoException;
 import br.ce.wcaquino.utils.DataUtils;
 
 public class LocacaoService {
 	
-	public Locacao alugarFilme(Usuario usuario, List<Filme> filmes) throws FilmeSemEstoqueException, LocadoraException {
+	private LocacaoDAO dao;
+	private SerasaService serasa;
+	
+	public Locacao alugarFilme(Usuario usuario, List<Filme> filmes) throws FilmeSemEstoqueException, LocadoraException, UsuarioNegativadoException {
 		
 		if(usuario == null) {
 			throw new LocadoraException("Usu·rio vazio");	
+		}
+		
+		if(serasa.possuiNegativacao(usuario)) {
+			throw new UsuarioNegativadoException("Usu·rio Negativado");
 		}
 		
 		if(filmes == null || filmes.isEmpty()) {
@@ -64,10 +74,18 @@ public class LocacaoService {
 		}
 		locacao.setDataRetorno(dataEntrega);
 		
-		//Salvando a locacao...	
-		//TODO adicionar m√©todo para salvar
+		//Persistindoo a locacao...	
+		dao.salvar(locacao);
 		
 		return locacao;
+	}
+
+	public void setLocacaoDAO(LocacaoDAO dao) {
+		this.dao=dao;
+	}
+	
+	public void setSerasaService(SerasaService serasa) {
+		this.serasa = serasa;
 	}
 
 	

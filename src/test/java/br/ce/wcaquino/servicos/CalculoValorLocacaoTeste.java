@@ -12,12 +12,16 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+import org.mockito.Mockito;
 
+import br.ce.wcaquino.dao.LocacaoDAO;
+import br.ce.wcaquino.dao.SerasaService;
 import br.ce.wcaquino.entidades.Filme;
 import br.ce.wcaquino.entidades.Locacao;
 import br.ce.wcaquino.entidades.Usuario;
 import br.ce.wcaquino.exceptions.FilmeSemEstoqueException;
 import br.ce.wcaquino.exceptions.LocadoraException;
+import br.ce.wcaquino.exceptions.UsuarioNegativadoException;
 
 //	DATA DRIVEN TEST. Aqui tudo é parâmetro, sem mais cambos chumbados.
 //	O que nós estamos fazendo é: Definir um @RunWith para rodar a classe como Parametrizada.
@@ -33,6 +37,8 @@ public class CalculoValorLocacaoTeste {
 	
 	
 	private LocacaoService service;
+	private SerasaService serasa;
+	
 	
 	@Parameter
 	public List<Filme> filmes;
@@ -46,6 +52,10 @@ public class CalculoValorLocacaoTeste {
 	@Before
 	public void before() {
 		service = new LocacaoService();
+		LocacaoDAO dao = Mockito.mock(LocacaoDAO.class);
+		service.setLocacaoDAO(dao);
+		serasa = Mockito.mock(SerasaService.class);
+		service.setSerasaService(serasa);
 	}
 	
 //	Preparando os dados a serem testados
@@ -70,7 +80,7 @@ public class CalculoValorLocacaoTeste {
 	}
 	
 	@Test
-	public void deveCalcularValorComDesconto() throws FilmeSemEstoqueException, LocadoraException {
+	public void deveCalcularValorComDesconto() throws FilmeSemEstoqueException, LocadoraException, UsuarioNegativadoException {
 //		cenário
 		Usuario usuario = new Usuario("Usuario 1");
 		
