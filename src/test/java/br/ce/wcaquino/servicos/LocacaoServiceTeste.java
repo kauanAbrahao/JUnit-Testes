@@ -24,6 +24,7 @@ import org.junit.rules.ErrorCollector;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
+import br.ce.wcaquino.dao.EmailService;
 import br.ce.wcaquino.dao.LocacaoDAO;
 import br.ce.wcaquino.dao.SerasaService;
 import br.ce.wcaquino.entidades.Filme;
@@ -38,6 +39,8 @@ public class LocacaoServiceTeste {
 
 	private LocacaoService service;
 	private SerasaService serasa;
+	private LocacaoDAO dao;
+	private EmailService email;
 	
 	@Rule
 	public ErrorCollector error = new ErrorCollector();	
@@ -50,7 +53,9 @@ public class LocacaoServiceTeste {
 	@Before
 	public void setup() {
 		service = new LocacaoService();
-		LocacaoDAO dao = Mockito.mock(LocacaoDAO.class);
+		email = Mockito.mock(EmailService.class);
+		service.setEmailService(email);
+		dao = Mockito.mock(LocacaoDAO.class);
 		service.setLocacaoDAO(dao);
 		serasa = Mockito.mock(SerasaService.class);
 		service.setSerasaService(serasa);
@@ -247,17 +252,51 @@ public class LocacaoServiceTeste {
 		assertTrue(segunda);	
 	}
 	
-	@Test(expected = UsuarioNegativadoException.class)
-	public void LocacaoService_UsuarioNegativadoNoSerasa() throws FilmeSemEstoqueException, LocadoraException, UsuarioNegativadoException {
+	@Test
+	public void LocacaoService_UsuarioNegativadoNoSerasa() throws FilmeSemEstoqueException, LocadoraException {
 //		cenário
 		Usuario usuario = new Usuario("Usuario1");
+//		Usuario usuario2 = new Usuario("Usuario2");
 		List<Filme>filmes = Arrays.asList(new Filme("Filme x", 4, 4.0));
+		
+/*		Definimos abaixo o comportamento do usuario para retornar true, ou seja, negativado.
+		Se colocarmos usuario2 ao invés do usuario na ação, o teste dará errado
+		Pois não definimos um comportamento para usuário, portanto, por padrão, o Mockito
+		Retorna false. */
 		Mockito.when(serasa.possuiNegativacao(usuario)).thenReturn(true);
 		
 //		ação
-		service.alugarFilme(usuario, filmes);
+		try {
+			service.alugarFilme(usuario, filmes);
+			Assert.fail();
+//		Verificação
+		} catch (UsuarioNegativadoException e) {
+			Assert.assertEquals("Usuário Negativado", e.getMessage());
+		}
+		Mockito.verify(serasa).possuiNegativacao(usuario	);
+	}
+	
+	@Test	
+	public void notificaLocacaoAtrasada() {
+//		cenário
+		Usuario usuario = new Usuario("Usuáro1");
+		List<Locacao> locacoes = Arrays.asList(new Locacao());
+		Locacao teste = locacoes.get(0);
+		teste.setDataRetorno(DataUtils.obterDataComDiferencaDias(-1));
+		teste.setUsuario(usuario);
+//		Usuario usuario2 = new Usuario("Usuário2");
 		
+		Mockito.when(dao.obterLocacoesPendentes()).thenReturn(locacoes);
+		
+//		ação
+		service.notificaAtraso();
+		
+//		Verificação
+		Mockito.verify(email).notificaAtraso(usuario);
 		
 	}
+		
+	
+
 	
 }

@@ -6,6 +6,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import br.ce.wcaquino.dao.EmailService;
 import br.ce.wcaquino.dao.LocacaoDAO;
 import br.ce.wcaquino.dao.SerasaService;
 import br.ce.wcaquino.entidades.Filme;
@@ -20,7 +21,11 @@ public class LocacaoService {
 	
 	private LocacaoDAO dao;
 	private SerasaService serasa;
+	private EmailService email;
 	
+	
+
+
 	public Locacao alugarFilme(Usuario usuario, List<Filme> filmes) throws FilmeSemEstoqueException, LocadoraException, UsuarioNegativadoException {
 		
 		if(usuario == null) {
@@ -79,6 +84,13 @@ public class LocacaoService {
 		
 		return locacao;
 	}
+	
+	public void notificaAtraso() {
+		List<Locacao> locacoes = dao.obterLocacoesPendentes();
+		for(Locacao locacao: locacoes) {
+			email.notificaAtraso(locacao.getUsuario());
+		} 
+	}
 
 	public void setLocacaoDAO(LocacaoDAO dao) {
 		this.dao=dao;
@@ -86,6 +98,14 @@ public class LocacaoService {
 	
 	public void setSerasaService(SerasaService serasa) {
 		this.serasa = serasa;
+	}
+	
+	public void setEmail(EmailService email) {
+		this.email = email;
+	}
+
+	public void setEmailService(EmailService email) {
+		this.email = email;
 	}
 
 	
